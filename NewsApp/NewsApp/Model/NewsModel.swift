@@ -8,16 +8,16 @@
 import Foundation
 
 struct NewsModel: Codable {
-    let status: String
-    let totalResults: Int
-    let articles: [Article]
+    var status: String
+    var totalResults: Int
+    var articles: [Article]
 }
 
 struct Article: Codable {
-    let author: String?
-    let title, articleDescription: String
-    let urlToImage: String
-    let publishedAt: Date
+    var author: String?
+    var title, articleDescription: String?
+    var urlToImage: String?
+    var publishedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case author, title

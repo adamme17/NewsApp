@@ -1,14 +1,14 @@
 //
-//  NewsView.swift
+//  FavsView.swift
 //  NewsApp
 //
-//  Created by Adam Bokun on 16.02.22.
+//  Created by Adam Bokun on 19.02.22.
 //
 
 import UIKit
 import SnapKit
 
-class NewsView: UIView {
+class FavsView: UIView {
    
     let tableView: UITableView = {
         let tableView = UITableView()
@@ -16,6 +16,14 @@ class NewsView: UIView {
         tableView.backgroundColor = .clear
         tableView.separatorColor = .lightGray
         return tableView
+    }()
+   
+    let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "You have to save the news"
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textAlignment = .center
+        return label
     }()
     
     override init(frame: CGRect) {
@@ -32,8 +40,15 @@ class NewsView: UIView {
         setupUI()
     }
     
+    // MARK: - Setup
+    
     internal func setupUI() {
         self.tableView.backgroundColor = .clear
+        self.addSubview(titleLabel)
+        self.titleLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
+        titleLabel.isHidden = true
         setup()
         setupConstraints()
     }

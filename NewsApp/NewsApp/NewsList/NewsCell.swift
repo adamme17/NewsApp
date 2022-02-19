@@ -9,26 +9,34 @@ import UIKit
 import SnapKit
 
 class NewsCell: UITableViewCell {
-    var safeArea: UILayoutGuide!
-    let imageIV = UIImageView()
-    let titleLabel = UILabel()
-    let descriptionLabel = UILabel()
-    let dateLabel = UILabel()
-    let authorLabel = UILabel()
-    var favoriteButton = UIButton()
+    private var safeArea: UILayoutGuide!
+    private let imageIV = CustomImageView()
+    private let titleLabel = UILabel()
+    private let descriptionLabel = UILabel()
+    private let dateLabel = UILabel()
+    private let authorLabel = UILabel()
+    private let showMoreLabel = UILabel()
+    private var favoriteButton = UIButton()
+    private let storageManager = CoreDataManager.shared()
 
-    var isFavotite: Bool = false {
+    private var cellViewModel: Article?
+    private var storageCellViewModel: FavoriteNews?
+    
+    private var isFavorite: Bool = false {
         didSet {
-            if isFavotite == false {
+            if isFavorite == false {
                 let config = UIImage.SymbolConfiguration(
                     pointSize: 25, weight: .medium, scale: .default)
                 let image = UIImage(systemName: "heart", withConfiguration: config)
                 favoriteButton.setImage(image, for: .normal)
+                storageManager.deleteItemFromFavorites(title: titleLabel.text ?? "")
             } else {
                 let config = UIImage.SymbolConfiguration(
                     pointSize: 25, weight: .medium, scale: .default)
                 let image = UIImage(systemName: "heart.fill", withConfiguration: config)
                 favoriteButton.setImage(image, for: .normal)
+                guard let news = cellViewModel else { return }
+                storageManager.prepareFavorites(dataForSaving: [news])
             }
         }
     }
@@ -41,6 +49,11 @@ class NewsCell: UITableViewCell {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    @objc func buttonTapped(sender: UIButton) {
+        print("Button was tapped")
+        isFavorite.toggle()
+    }
 
     // MARK: - Setup
 
@@ -48,17 +61,13 @@ class NewsCell: UITableViewCell {
         self.backgroundColor = .clear
         safeArea = layoutMarginsGuide
         self.imageIV.image = UIImage(named: "NoImage")
-        self.titleLabel.text = "Jabra's Elite 4 Active Offer Great Bang for Your Buck"
-        self.descriptionLabel.text = "U.S. stock index futures jumped on Tuesday on news that Russia was pulling back some troops from near the Ukrainian border, in signs of a de-escalation in tensions between the two countries."
-        self.dateLabel.text = "15 Jan, 2022"
-        self.authorLabel.text = "by Mitchel Broussard"
-        self.isFavotite = false
+        self.isFavorite = false
         setupImageIV()
         setupTitleLabel()
         setupDescriptionLabel()
         setupDateLabel()
         setupAuthorLabel()
-        setupFavouriteButton()
+        setupFavoriteButton()
     }
 
     private func setupImageIV() {
@@ -85,9 +94,11 @@ class NewsCell: UITableViewCell {
         contentView.addSubview(authorLabel)
         authorLabel.font = UIFont.italicSystemFont(ofSize: 12)
         authorLabel.textAlignment = .left
+        authorLabel.numberOfLines = 3
         authorLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(30)
             make.leading.equalTo(imageIV.snp.trailing).offset(10)
+            make.trailing.equalToSuperview().inset(40)
         }
     }
 
@@ -103,14 +114,15 @@ class NewsCell: UITableViewCell {
 
     private func setupDescriptionLabel() {
         contentView.addSubview(descriptionLabel)
-        if descriptionLabel.text!.count > 50 {
-            let readmoreFont = UIFont(name: "Helvetica", size: 16.0)
-            let readmoreFontColor = UIColor.blue
-            DispatchQueue.main.async {
-                self.descriptionLabel.addTrailing(with: "... ", moreText: "Show more", moreTextFont: readmoreFont!, moreTextColor: readmoreFontColor)
-            }
-        }
         descriptionLabel.numberOfLines = 3
+        let readmoreFont = UIFont(name: "Helvetica", size: 16.0)
+        let readmoreFontColor = UIColor.blue
+        DispatchQueue.main.async {
+            self.descriptionLabel.addTrailing(with: "... ",
+                                              moreText: "Show more",
+                                              moreTextFont: readmoreFont!,
+                                              moreTextColor: readmoreFontColor)
+        }
         descriptionLabel.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(15)
             make.top.equalTo(titleLabel.snp.bottom).offset(5)
@@ -118,14 +130,45 @@ class NewsCell: UITableViewCell {
         }
     }
 
-    private func setupFavouriteButton() {
+    private func setupFavoriteButton() {
         contentView.addSubview(favoriteButton)
         favoriteButton.tintColor = .red
+        favoriteButton.addTarget(self, action: #selector(buttonTapped(sender:)), for: .touchUpInside)
         favoriteButton.clipsToBounds = true
         favoriteButton.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(10)
             make.trailing.equalToSuperview().offset(-15)
             make.width.greaterThanOrEqualTo(20)
+        }
+    }
+    
+    func setupModel(model: Article) {
+        self.cellViewModel = model
+        self.titleLabel.text = model.title
+        self.authorLabel.text = "by \(model.author == nil ? "Unknown" : model.author ?? "")"
+        self.descriptionLabel.text = model.articleDescription
+        self.dateLabel.text = DateManager.shared.formatDate(date: model.publishedAt ?? "")
+        if let url = URL(string: model.urlToImage ?? "") {
+            self.imageIV.loadImage(from: url)
+        }
+        let favorites = storageManager.fetchFavoritesNews()
+        if favorites.contains(where: { $0.title == model.title }) {
+            self.isFavorite = true
+        }
+    }
+    
+    func setupStorageModel(model: FavoriteNews) {
+        self.storageCellViewModel = model
+        self.titleLabel.text = model.title
+        self.authorLabel.text = "by \(model.author == nil ? "Unknown" : model.author ?? "")"
+        self.descriptionLabel.text = model.articleDescription
+        self.dateLabel.text = DateManager.shared.formatDate(date: model.publishedAt ?? "")
+        if let url = URL(string: model.urlToImage ?? "") {
+            self.imageIV.loadImage(from: url)
+        }
+        let favorites = storageManager.fetchFavoritesNews()
+        if favorites.contains(where: { $0.title == model.title }) {
+            self.isFavorite = true
         }
     }
 }
@@ -172,4 +215,16 @@ extension UILabel {
         }
         return self.text!.count
     }
+    
+    func countLabelLines() -> Int {
+            let myText = self.text! as NSString
+        let attributes = [NSAttributedString.Key.font : self.font]
+            
+            let labelSize = myText.boundingRect(with: CGSize(width: self.bounds.width, height: CGFloat.greatestFiniteMagnitude), options: NSStringDrawingOptions.usesLineFragmentOrigin, attributes: attributes, context: nil)
+            return Int(ceil(CGFloat(labelSize.height) / self.font.lineHeight))
+        }
+        
+        func isTruncated() -> Bool {
+            return countLabelLines() > 3
+        }
 }
