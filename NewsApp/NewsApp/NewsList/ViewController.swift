@@ -70,13 +70,6 @@ class ViewController: UIViewController {
         self.view = newsView
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        newsView.addSpinner()
-        loadNewsPage(currentDate: currentDate, nextDate: nextDate)
-        print("default current date " + currentDate)
-        print("default next date " + nextDate)
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
@@ -90,6 +83,11 @@ class ViewController: UIViewController {
         
         newsOperationQueue.maxConcurrentOperationCount = 1
         newsOperationQueue.qualityOfService = .userInitiated
+        
+        newsView.addSpinner()
+        loadNewsPage(currentDate: currentDate, nextDate: nextDate)
+        print("default current date " + currentDate)
+        print("default next date " + nextDate)
     }
     
     private func setupView() {

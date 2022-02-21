@@ -176,12 +176,17 @@ class NewsCell: UITableViewCell {
 extension UILabel {
     func addTrailing(with trailingText: String, moreText: String, moreTextFont: UIFont, moreTextColor: UIColor) {
         let readMoreText: String = trailingText + moreText
-
         let lengthForVisibleString: Int = self.vissibleTextLength
         let mutableString: String = self.text!
         let trimmedString: String? = (mutableString as NSString).replacingCharacters(in: NSRange(location: lengthForVisibleString, length: ((self.text?.count)! - lengthForVisibleString)), with: "")
+        guard let trimmedString = trimmedString,
+              trimmedString.count > 0
+        else {
+            return
+        }
         let readMoreLength: Int = (readMoreText.count)
-        let trimmedForReadMore: String = (trimmedString! as NSString).replacingCharacters(in: NSRange(location: ((trimmedString?.count ?? 0) - readMoreLength), length: readMoreLength), with: "") + trailingText
+        debugPrint("text: \(trimmedString) ++++count: ",trimmedString.count)
+        let trimmedForReadMore: String = (trimmedString as NSString).replacingCharacters(in: NSRange(location: (trimmedString.count - readMoreLength), length: readMoreLength), with: "") + trailingText
         let answerAttributed = NSMutableAttributedString(string: trimmedForReadMore, attributes: [NSAttributedString.Key.font: self.font])
         let readMoreAttributed = NSMutableAttributedString(string: moreText, attributes: [NSAttributedString.Key.font: moreTextFont, NSAttributedString.Key.foregroundColor: moreTextColor])
         answerAttributed.append(readMoreAttributed)
@@ -215,16 +220,4 @@ extension UILabel {
         }
         return self.text!.count
     }
-    
-    func countLabelLines() -> Int {
-            let myText = self.text! as NSString
-        let attributes = [NSAttributedString.Key.font : self.font]
-            
-            let labelSize = myText.boundingRect(with: CGSize(width: self.bounds.width, height: CGFloat.greatestFiniteMagnitude), options: NSStringDrawingOptions.usesLineFragmentOrigin, attributes: attributes, context: nil)
-            return Int(ceil(CGFloat(labelSize.height) / self.font.lineHeight))
-        }
-        
-        func isTruncated() -> Bool {
-            return countLabelLines() > 3
-        }
 }
